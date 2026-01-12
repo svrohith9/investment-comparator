@@ -4,6 +4,15 @@ export interface AddressResult {
   lon: string;
 }
 
+export interface StockCagrResult {
+  stockCAGR: number;
+  stockStartPrice: number;
+  stockEndPrice: number;
+  stockStartDate: string;
+  stockEndDate: string;
+  dataSource: string;
+}
+
 export async function searchAddress(query: string): Promise<AddressResult[]> {
   if (query.length < 3) return [];
   const normalized = query.trim().toLowerCase();
@@ -16,15 +25,65 @@ export async function analyzeMarket(location: string, benchmark: string) {
   const locationName = normalizeLocationName(location);
   const propertyTaxRate = estimatePropertyTaxRate(location);
   const propertyAppreciationRate = estimateAppreciationRate(location);
-  const stockCAGR = estimateStockCagr(benchmark);
 
   return {
     propertyTaxRate,
     propertyAppreciationRate,
-    stockCAGR,
     marketVibe: "Local estimate based on defaults",
     locationName,
   };
+}
+
+export async function fetchStockCagr(
+  ticker: string,
+  startDate: string
+): Promise<StockCagrResult> {
+  const apiKey = import.meta.env.VITE_ALPHA_VANTAGE_KEY as string | undefined;
+  const trimmedTicker = ticker.trim().toUpperCase();
+  const safeStartDate = startDate || "2014-01-02";
+
+  if (!apiKey) {
+    return fallbackStockCagr(trimmedTicker, safeStartDate, "Missing API key");
+  }
+
+  try {
+    const response = await fetch(
+      `/av/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${encodeURIComponent(
+        trimmedTicker
+      )}&outputsize=full&apikey=${apiKey}`
+    );
+
+    if (!response.ok) {
+      return fallbackStockCagr(trimmedTicker, safeStartDate, "API request failed");
+    }
+
+    const data = await response.json();
+    const series = data["Time Series (Daily)"] as Record<string, Record<string, string>>;
+    if (!series) {
+      return fallbackStockCagr(trimmedTicker, safeStartDate, "No time series data");
+    }
+
+    const dates = Object.keys(series).sort((a, b) => (a < b ? 1 : -1));
+    const endDate = dates[0];
+    const startDateUsed = pickStartDate(dates, safeStartDate);
+
+    const endPrice = parseFloat(series[endDate]["5. adjusted close"]);
+    const startPrice = parseFloat(series[startDateUsed]["5. adjusted close"]);
+    const years = yearDiff(startDateUsed, endDate);
+    const stockCAGR = years > 0 ? Math.pow(endPrice / startPrice, 1 / years) - 1 : 0;
+
+    return {
+      stockCAGR,
+      stockStartPrice: startPrice,
+      stockEndPrice: endPrice,
+      stockStartDate: startDateUsed,
+      stockEndDate: endDate,
+      dataSource: "Alpha Vantage",
+    };
+  } catch (error) {
+    console.error("Stock data error:", error);
+    return fallbackStockCagr(trimmedTicker, safeStartDate, "Stock data error");
+  }
 }
 
 const LOCAL_ADDRESSES: AddressResult[] = [
@@ -97,4 +156,34 @@ function estimateStockCagr(benchmark: string) {
 function extractStateCode(location: string) {
   const match = location.toUpperCase().match(/\b([A-Z]{2})\b/);
   return match ? match[1] : null;
+}
+
+function pickStartDate(dates: string[], requested: string) {
+  const requestedDate = requested.trim();
+  for (const date of dates) {
+    if (date <= requestedDate) {
+      return date;
+    }
+  }
+  return dates[dates.length - 1];
+}
+
+function yearDiff(start: string, end: string) {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const diffMs = Math.max(0, endDate.getTime() - startDate.getTime());
+  return diffMs / (1000 * 60 * 60 * 24 * 365.25);
+}
+
+function fallbackStockCagr(ticker: string, startDate: string, reason: string): StockCagrResult {
+  const fallbackCagr = estimateStockCagr(ticker);
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    stockCAGR: fallbackCagr,
+    stockStartPrice: 0,
+    stockEndPrice: 0,
+    stockStartDate: startDate,
+    stockEndDate: today,
+    dataSource: `Fallback (${reason})`,
+  };
 }

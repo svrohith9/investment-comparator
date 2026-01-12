@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { InvestmentData } from '../types';
-import { searchAddress, analyzeMarket, AddressResult } from '../services/api';
+import { searchAddress, analyzeMarket, AddressResult, fetchStockCagr } from '../services/api';
 
 interface InputScreenProps {
   data: InvestmentData;
@@ -44,9 +44,24 @@ const InputScreen: React.FC<InputScreenProps> = ({ data, onUpdate, onCompare, on
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
-    // Use local heuristics based on the entered location
-    const rates = await analyzeMarket(data.address || 'United States', data.benchmark);
-    onUpdate({ computedRates: rates });
+    const location = data.address || 'United States';
+    const [rates, stock] = await Promise.all([
+      analyzeMarket(location, data.benchmark),
+      fetchStockCagr(data.benchmark, data.startDate),
+    ]);
+    onUpdate({
+      computedRates: {
+        ...rates,
+        stockCAGR: stock.stockCAGR,
+        stockStartPrice: stock.stockStartPrice,
+        stockEndPrice: stock.stockEndPrice,
+        stockStartDate: stock.stockStartDate,
+        stockEndDate: stock.stockEndDate,
+        stockDataSource: stock.dataSource,
+      },
+      propertyTaxRate: rates.propertyTaxRate,
+      propertyAppreciationRate: rates.propertyAppreciationRate,
+    });
     setIsAnalyzing(false);
     onCompare();
   };
@@ -57,9 +72,9 @@ const InputScreen: React.FC<InputScreenProps> = ({ data, onUpdate, onCompare, on
        {isAnalyzing && (
         <div className="fixed inset-0 z-[60] bg-background-dark/90 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-in fade-in duration-200">
            <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-6"></div>
-           <h3 className="text-xl font-bold text-white mb-2">Estimating Local Market</h3>
+           <h3 className="text-xl font-bold text-white mb-2">Fetching Market Data</h3>
            <p className="text-text-muted text-center max-w-xs">
-             Using offline defaults for <span className="text-primary">{data.address.split(',')[0]}</span> and {data.benchmark} historicals...
+             Pulling historical prices for {data.benchmark} and applying local tax defaults...
            </p>
         </div>
       )}
@@ -200,6 +215,90 @@ const InputScreen: React.FC<InputScreenProps> = ({ data, onUpdate, onCompare, on
                   </div>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">Loan Term</label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted font-bold">yrs</span>
+                    <input 
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none" 
+                      type="number" 
+                      value={data.loanTermYears}
+                      onChange={(e) => onUpdate({ loanTermYears: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">HOA (Monthly)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted font-bold">$</span>
+                    <input 
+                      className="w-full pl-8 pr-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none" 
+                      type="number" 
+                      value={data.hoaMonthly}
+                      onChange={(e) => onUpdate({ hoaMonthly: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">Insurance (Annual)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted font-bold">$</span>
+                    <input 
+                      className="w-full pl-8 pr-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none" 
+                      type="number" 
+                      value={data.insuranceAnnual}
+                      onChange={(e) => onUpdate({ insuranceAnnual: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">Maintenance</label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted font-bold">%</span>
+                    <input 
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none" 
+                      step="0.1"
+                      type="number" 
+                      value={data.maintenanceRate * 100}
+                      onChange={(e) => onUpdate({ maintenanceRate: Number(e.target.value) / 100 })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">Property Tax Rate</label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted font-bold">%</span>
+                    <input 
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none" 
+                      step="0.01"
+                      type="number" 
+                      value={data.propertyTaxRate * 100}
+                      onChange={(e) => onUpdate({ propertyTaxRate: Number(e.target.value) / 100 })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">Appreciation</label>
+                  <div className="relative">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-text-muted font-bold">%</span>
+                    <input 
+                      className="w-full px-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none" 
+                      step="0.01"
+                      type="number" 
+                      value={data.propertyAppreciationRate * 100}
+                      onChange={(e) => onUpdate({ propertyAppreciationRate: Number(e.target.value) / 100 })}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -236,14 +335,35 @@ const InputScreen: React.FC<InputScreenProps> = ({ data, onUpdate, onCompare, on
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">Custom Ticker (Optional)</label>
+                <input
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none"
+                  placeholder="e.g. VTI"
+                  type="text"
+                  value={data.benchmark}
+                  onChange={(e) => onUpdate({ benchmark: e.target.value.toUpperCase() })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-500 dark:text-text-muted mb-1.5">Stock Start Date</label>
+                <input
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-input-dark border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white outline-none"
+                  type="date"
+                  value={data.startDate}
+                  onChange={(e) => onUpdate({ startDate: e.target.value })}
+                />
+              </div>
+
               {/* Dynamic Info */}
               <div className="pt-2">
                  <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-semibold text-slate-400 dark:text-text-muted uppercase tracking-wider">Local Market Estimates</span>
-                    <span className="bg-slate-500/10 text-slate-500 text-[10px] px-1.5 py-0.5 rounded font-bold">OFFLINE</span>
+                    <span className="bg-slate-500/10 text-slate-500 text-[10px] px-1.5 py-0.5 rounded font-bold">MARKET DATA</span>
                  </div>
                  <p className="text-sm text-slate-600 dark:text-slate-400">
-                    We'll use offline estimates for {data.benchmark} growth and typical property taxes based on your entry.
+                    We'll pull historical prices from {data.startDate || 'your date'} to estimate {data.benchmark || 'your benchmark'} CAGR.
                  </p>
               </div>
             </div>

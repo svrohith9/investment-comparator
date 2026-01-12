@@ -12,29 +12,53 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
   const [taxView, setTaxView] = useState<'pre' | 'after'>('pre');
 
   // Dynamic constants from local estimates or defaults
-  const PROP_TAX_RATE = data.computedRates?.propertyTaxRate ?? 0.012;
-  const PROP_APPREC_RATE = data.computedRates?.propertyAppreciationRate ?? 0.05;
+  const PROP_TAX_RATE = data.propertyTaxRate ?? data.computedRates?.propertyTaxRate ?? 0.012;
+  const PROP_APPREC_RATE = data.propertyAppreciationRate ?? data.computedRates?.propertyAppreciationRate ?? 0.05;
   const STOCK_RATE = data.computedRates?.stockCAGR ?? 0.08;
+  const HOA_MONTHLY = data.hoaMonthly ?? 0;
+  const INSURANCE_ANNUAL = data.insuranceAnnual ?? 0;
+  const MAINT_RATE = data.maintenanceRate ?? 0;
+  const LOAN_TERM_YEARS = data.loanTermYears ?? 30;
   const CAP_GAINS_RATE = 0.15; 
 
   // Generate chart data based on user input
   const chartData = React.useMemo(() => {
     const points = [];
-    const years = data.horizon > 5 ? data.horizon : 30;
+    const years = Math.max(1, data.horizon);
     const startYear = new Date().getFullYear();
 
     // Initial values
     const initialInvestment = data.purchasePrice * (data.downPayment / 100);
-    
-    let stockVal = initialInvestment;
-    let propEquity = initialInvestment; // Equity bucket
-    let propAssetValue = data.purchasePrice; // Total Asset Value (for tax basis)
-    let cumPropTax = 0;
+    const principal = data.purchasePrice - initialInvestment;
 
-    for (let i = 0; i <= years; i++) {
-      // 1. Calculate taxes for the *current* year state
-      const annualPropTax = propAssetValue * PROP_TAX_RATE;
-      
+    let stockVal = initialInvestment;
+    let propAssetValue = data.purchasePrice;
+    let loanBalance = principal;
+    let cumPropTax = 0;
+    let cumCosts = 0;
+    let cumInterest = 0;
+
+    const monthlyStockRate = Math.pow(1 + STOCK_RATE, 1 / 12) - 1;
+    const monthlyPropRate = Math.pow(1 + PROP_APPREC_RATE, 1 / 12) - 1;
+    const monthlyInterestRate = data.interestRate > 0 ? data.interestRate / 100 / 12 : 0;
+    const termMonths = LOAN_TERM_YEARS * 12;
+    const safeTermMonths = Math.max(1, termMonths);
+    const monthlyPayment = principal <= 0
+      ? 0
+      : monthlyInterestRate === 0
+        ? principal / safeTermMonths
+        : (principal * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, safeTermMonths)) /
+          (Math.pow(1 + monthlyInterestRate, safeTermMonths) - 1);
+
+    const months = years * 12;
+
+    for (let month = 0; month <= months; month++) {
+      if (month % 12 === 0) {
+        const yearIndex = month / 12;
+        // 1. Calculate taxes for the *current* year state
+        const annualPropTax = propAssetValue * PROP_TAX_RATE;
+        const propEquity = propAssetValue - loanBalance;
+
       // 2. Calculate Net Values (Liquidated Today)
       // Stock
       const stockGain = stockVal - initialInvestment;
@@ -42,32 +66,61 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
       const stockNet = stockVal - stockTaxBill;
 
       // Property
-      const propGain = propEquity - initialInvestment;
+        const propGain = propEquity - initialInvestment;
       const propCapGainsBill = propGain > 0 ? propGain * CAP_GAINS_RATE : 0;
       // In after-tax view, we subtract Cap Gains AND the cumulative cashflow spent on taxes (Opp. Cost)
-      const propNet = propEquity - propCapGainsBill - cumPropTax;
+        const propNet = propEquity - propCapGainsBill - cumCosts;
 
       points.push({
-        year: (startYear + i).toString(),
+          year: (startYear + yearIndex).toString(),
         // Display values
         stock: taxView === 'after' ? Math.round(stockNet) : Math.round(stockVal),
-        property: taxView === 'after' ? Math.round(propNet) : Math.round(propEquity),
+          property: taxView === 'after' ? Math.round(propNet) : Math.round(propEquity),
         // Metadata for Tax Section
-        rawAnnualTax: annualPropTax,
-        rawCumTax: cumPropTax,
-        rawAssetValue: propAssetValue,
+          rawAnnualTax: annualPropTax,
+          rawCumTax: cumPropTax,
+          rawAssetValue: propAssetValue,
+          rawCumCosts: cumCosts,
+          rawLoanBalance: loanBalance,
+          rawMortgageInterest: cumInterest,
       });
+      }
+
+      if (month === months) {
+        break;
+      }
 
       // 3. Increment for next loop
-      stockVal = stockVal * (1 + STOCK_RATE);
-      propEquity = propEquity * (1 + PROP_APPREC_RATE);
-      propAssetValue = propAssetValue * (1 + PROP_APPREC_RATE);
+      stockVal = stockVal * (1 + monthlyStockRate);
+      propAssetValue = propAssetValue * (1 + monthlyPropRate);
+
+      if (loanBalance > 0 && month < termMonths) {
+        const interest = loanBalance * monthlyInterestRate;
+        const principalPaid = Math.max(0, monthlyPayment - interest);
+        loanBalance = Math.max(0, loanBalance - principalPaid);
+        cumInterest += interest;
+        cumCosts += interest;
+      }
       
       // Accumulate tax paid for next year's net calc
-      cumPropTax += annualPropTax;
+      const monthlyPropTax = propAssetValue * PROP_TAX_RATE / 12;
+      const monthlyInsurance = INSURANCE_ANNUAL / 12;
+      const monthlyMaintenance = (MAINT_RATE * propAssetValue) / 12;
+      cumPropTax += monthlyPropTax;
+      cumCosts += monthlyPropTax + monthlyInsurance + monthlyMaintenance + HOA_MONTHLY;
     }
     return points;
-  }, [data, taxView, PROP_TAX_RATE, PROP_APPREC_RATE, STOCK_RATE]);
+  }, [
+    data,
+    taxView,
+    PROP_TAX_RATE,
+    PROP_APPREC_RATE,
+    STOCK_RATE,
+    HOA_MONTHLY,
+    INSURANCE_ANNUAL,
+    MAINT_RATE,
+    LOAN_TERM_YEARS,
+  ]);
 
   const finalPoint = chartData[chartData.length - 1];
   const finalStock = finalPoint.stock;
@@ -226,6 +279,32 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
                     </svg>
                     <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                         {data.benchmark} CAGR: {formatPercent(STOCK_RATE)}
+                    </span>
+                 </div>
+                 <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-card-dark px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                    <svg
+                      className="h-4 w-4 text-slate-500"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M7 2h2v2h6V2h2v2h3v18H4V4h3V2zm12 8H5v10h14V10z" />
+                    </svg>
+                    <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                        {data.computedRates?.stockStartDate || data.startDate} → {data.computedRates?.stockEndDate || 'Latest'}
+                    </span>
+                 </div>
+                 <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-card-dark px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                    <svg
+                      className="h-4 w-4 text-slate-500"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 4a1 1 0 110 2 1 1 0 010-2zm-1 4h2v6h-2v-6z" />
+                    </svg>
+                    <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                        {data.computedRates?.stockDataSource || 'Local fallback'}
                     </span>
                  </div>
                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-card-dark px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 whitespace-nowrap">

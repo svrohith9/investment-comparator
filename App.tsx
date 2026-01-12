@@ -12,6 +12,13 @@ const App: React.FC = () => {
     purchasePrice: 450000,
     downPayment: 20,
     interestRate: 6.5,
+    loanTermYears: 30,
+    hoaMonthly: 0,
+    insuranceAnnual: 1200,
+    maintenanceRate: 0.01,
+    propertyTaxRate: 0.012,
+    propertyAppreciationRate: 0.04,
+    startDate: '2014-01-02',
     benchmark: 'SPY',
     horizon: 15,
   });

@@ -4,6 +4,11 @@ export interface ComputedRates {
   stockCAGR: number;
   marketVibe: string;
   locationName: string;
+  stockStartPrice?: number;
+  stockEndPrice?: number;
+  stockStartDate?: string;
+  stockEndDate?: string;
+  stockDataSource?: string;
 }
 
 export interface InvestmentData {
@@ -11,7 +16,14 @@ export interface InvestmentData {
   purchasePrice: number;
   downPayment: number;
   interestRate: number;
-  benchmark: 'SPY' | 'QQQ' | 'DIA';
+  loanTermYears: number;
+  hoaMonthly: number;
+  insuranceAnnual: number;
+  maintenanceRate: number;
+  propertyTaxRate: number;
+  propertyAppreciationRate: number;
+  startDate: string;
+  benchmark: string;
   horizon: number;
   computedRates?: ComputedRates;
 }
