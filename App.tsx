@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { InvestmentData } from './types';
+import HomeScreen from './components/HomeScreen';
 import InputScreen from './components/InputScreen';
 import ResultsScreen from './components/ResultsScreen';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'input' | 'results'>('input');
+  const [currentView, setCurrentView] = useState<'home' | 'input' | 'results'>('home');
   
   const [data, setData] = useState<InvestmentData>({
     address: '',
@@ -24,6 +25,11 @@ const App: React.FC = () => {
     setCurrentView('results');
   };
 
+  const navigateToHome = () => {
+    window.scrollTo(0, 0);
+    setCurrentView('home');
+  };
+
   const navigateToInput = () => {
     window.scrollTo(0, 0);
     setCurrentView('input');
@@ -31,11 +37,14 @@ const App: React.FC = () => {
 
   return (
     <div className="antialiased font-display text-slate-900 dark:text-white bg-background-light dark:bg-background-dark min-h-screen">
-      {currentView === 'input' ? (
+      {currentView === 'home' ? (
+        <HomeScreen onGetStarted={navigateToInput} />
+      ) : currentView === 'input' ? (
         <InputScreen 
           data={data} 
           onUpdate={handleUpdateData} 
           onCompare={navigateToResults} 
+          onBack={navigateToHome}
         />
       ) : (
         <ResultsScreen 

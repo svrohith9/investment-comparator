@@ -11,7 +11,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
   const [inflationAdjusted, setInflationAdjusted] = useState(false);
   const [taxView, setTaxView] = useState<'pre' | 'after'>('pre');
 
-  // Dynamic Constants from AI or Defaults
+  // Dynamic constants from local estimates or defaults
   const PROP_TAX_RATE = data.computedRates?.propertyTaxRate ?? 0.012;
   const PROP_APPREC_RATE = data.computedRates?.propertyAppreciationRate ?? 0.05;
   const STOCK_RATE = data.computedRates?.stockCAGR ?? 0.08;
@@ -98,7 +98,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
             onClick={onBack}
             className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-white"
           >
-            <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+            <svg
+              className="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </svg>
           </button>
           <div className="text-center">
             <h1 className="text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white">Comparison Results</h1>
@@ -107,7 +114,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
             </p>
           </div>
           <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-white">
-            <span className="material-symbols-outlined text-2xl">info</span>
+            <svg
+              className="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 4a1 1 0 110 2 1 1 0 010-2zm-1 4h2v6h-2v-6z" />
+            </svg>
           </button>
         </div>
       </header>
@@ -202,19 +216,40 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
         <section className="px-4 mt-4">
              <div className="flex gap-2 overflow-x-auto pb-2">
                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-card-dark px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 whitespace-nowrap">
-                    <span className="material-symbols-outlined text-[14px] text-primary">analytics</span>
+                    <svg
+                      className="h-4 w-4 text-primary"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M3 3h18v2H3V3zm2 6h3v8H5V9zm5 4h3v4h-3v-4zm5-6h3v10h-3V7z" />
+                    </svg>
                     <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                         {data.benchmark} CAGR: {formatPercent(STOCK_RATE)}
                     </span>
                  </div>
                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-card-dark px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 whitespace-nowrap">
-                    <span className="material-symbols-outlined text-[14px] text-amber-500">location_city</span>
+                    <svg
+                      className="h-4 w-4 text-amber-500"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M3 21V8l7-5 7 5v13H3zm4-2h2v-3H7v3zm4 0h2v-3h-2v3zm-4-5h2v-3H7v3zm4 0h2v-3h-2v3z" />
+                    </svg>
                     <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                         Prop Tax: {formatPercent(PROP_TAX_RATE)}
                     </span>
                  </div>
                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-card-dark px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 whitespace-nowrap">
-                    <span className="material-symbols-outlined text-[14px] text-emerald-500">trending_up</span>
+                    <svg
+                      className="h-4 w-4 text-emerald-500"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M3 17l6-6 4 4 7-7v4h2V5h-7v2h3l-5 5-4-4-7 7z" />
+                    </svg>
                     <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                         Appreciation: {formatPercent(PROP_APPREC_RATE)}
                     </span>
@@ -253,7 +288,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
             <section className="mt-6 px-4 animate-[fadeIn_0.3s_ease-out]">
                 <div className="bg-amber-50 dark:bg-[#1a1814] border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
-                        <span className="material-symbols-outlined text-amber-600 dark:text-amber-500">receipt_long</span>
+                        <svg
+                          className="h-5 w-5 text-amber-600 dark:text-amber-500"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path d="M7 3h10v15l-2-1-2 1-2-1-2 1-2-1-2 1V3zm2 4h6v2H9V7zm0 4h6v2H9v-2z" />
+                        </svg>
                         <h3 className="text-sm font-bold text-amber-900 dark:text-amber-400 uppercase tracking-wide">Tax Liability Breakdown</h3>
                     </div>
                     
@@ -302,7 +344,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
                  {((winnerValue - (data.purchasePrice * data.downPayment/100)) / (data.purchasePrice * data.downPayment/100) * 100).toFixed(1)}%
               </p>
               <div className="flex items-center gap-1 mt-1">
-                <span className="material-symbols-outlined text-emerald-500 text-sm">arrow_upward</span>
+                <svg
+                  className="h-4 w-4 text-emerald-500"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M12 4l-7 7h4v7h6v-7h4l-7-7z" />
+                </svg>
                 <span className="text-[11px] font-bold text-emerald-500">vs Initial Inv.</span>
               </div>
             </div>
@@ -312,7 +361,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
               <p className="text-xs font-medium text-slate-500 dark:text-text-muted mb-1">Stock CAGR</p>
               <p className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">{formatPercent(STOCK_RATE)}</p>
               <div className="flex items-center gap-1 mt-1">
-                <span className="material-symbols-outlined text-primary text-sm">show_chart</span>
+                <svg
+                  className="h-4 w-4 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M4 18l6-6 4 4 6-8v3l-6 8-4-4-6 6z" />
+                </svg>
                 <span className="text-[11px] font-bold text-primary">10yr Avg</span>
               </div>
             </div>
@@ -322,7 +378,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
               <p className="text-xs font-medium text-slate-500 dark:text-text-muted mb-1">Final Value</p>
               <p className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">{formatCurrency(winnerValue)}</p>
               <div className="flex items-center gap-1 mt-1">
-                <span className="material-symbols-outlined text-slate-400 text-sm">calendar_today</span>
+                <svg
+                  className="h-4 w-4 text-slate-400"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M7 2h2v2h6V2h2v2h3v18H4V4h3V2zm12 8H5v10h14V10z" />
+                </svg>
                 <span className="text-[11px] font-bold text-slate-400">in {chartData.length - 1} Years</span>
               </div>
             </div>
@@ -332,7 +395,14 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
               <p className="text-xs font-medium text-slate-500 dark:text-text-muted mb-1">Missed Growth</p>
               <p className="text-xl font-extrabold tracking-tight text-rose-500">{formatCurrency(Math.abs(finalStock - finalProp))}</p>
               <div className="flex items-center gap-1 mt-1">
-                <span className="material-symbols-outlined text-rose-500 text-sm">warning</span>
+                <svg
+                  className="h-4 w-4 text-rose-500"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
+                </svg>
                 <span className="text-[11px] font-bold text-rose-500">Difference</span>
               </div>
             </div>
@@ -344,12 +414,19 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
           <div className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-4 border border-primary/20">
             <div className="flex gap-3">
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
-                <span className="material-symbols-outlined text-lg">lightbulb</span>
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M9 21h6v-1H9v1zm3-19a7 7 0 00-4 12.74V17h8v-2.26A7 7 0 0012 2zm3 11.3V15h-6v-1.7l-.2-.14A5 5 0 1115.2 12.9l-.2.14z" />
+                </svg>
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">AI Analysis</h4>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Local Analysis</h4>
                 <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                  {data.computedRates?.marketVibe || 'Analysis complete.'} The model estimates a {formatPercent(PROP_APPREC_RATE)} annual appreciation for this area, but tax drag significantly impacts long-term yield.
+                  {data.computedRates?.marketVibe || 'Analysis complete.'} We estimate a {formatPercent(PROP_APPREC_RATE)} annual appreciation for this area, but tax drag significantly impacts long-term yield.
                 </p>
               </div>
             </div>
@@ -361,11 +438,25 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ data, onBack }) => {
       <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 pb-8 pt-4 px-4 z-50">
         <div className="max-w-md mx-auto flex gap-3">
           <button className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary/20 active:scale-95">
-            <span className="material-symbols-outlined">download</span>
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M5 20h14v-2H5v2zm7-18v10l4-4 1.4 1.4L12 15.8 6.6 9.4 8 8l4 4V2h0z" />
+            </svg>
             <span>Export</span>
           </button>
           <button className="flex-1 flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 text-white font-bold py-3.5 rounded-xl transition-all active:scale-95 shadow-md">
-            <span className="material-symbols-outlined">share</span>
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M18 16a3 3 0 00-2.4 1.2L8.9 13.7a3.2 3.2 0 000-3.4l6.7-3.5A3 3 0 0018 8a3 3 0 10-3-3 3 3 0 00.1.7L8.4 9.2a3 3 0 100 5.6l6.7 3.6a3 3 0 10.9-2.4z" />
+            </svg>
             <span>Share</span>
           </button>
         </div>

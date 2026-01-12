@@ -1,20 +1,52 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Investment Comparator
 
-# Run and deploy your AI Studio app
+Compare real estate and stock market outcomes with deterministic, local estimates. This version runs without third-party data APIs so it can be used offline.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1_qguaJz94K4DzMx2TswGvsqgQSrpYE3g
+- Side-by-side real estate vs. benchmark index projections
+- Local, deterministic heuristics for tax/appreciation/CAGR
+- Interactive inputs with charted results
+- Mobile-first, single-page flow
 
-## Run Locally
+## Quick Start
 
-**Prerequisites:**  Node.js
+**Prerequisites:** Node.js 18+
 
+```bash
+npm install
+npm run dev
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+Open `http://localhost:3000` in your browser.
+
+## Project Structure
+
+```
+components/        UI screens and controls
+services/          Local analysis and data utilities
+App.tsx            App shell and view routing
+types.ts           Shared TypeScript types
+```
+
+## Local Data Notes
+
+The app does not call external APIs. Market data is derived from local heuristics in `services/api.ts`. If you want to plug in real data later, replace those functions with your data source and update the UI copy accordingly.
+
+## Scripts
+
+- `npm run dev` - start Vite dev server
+- `npm run build` - production build
+- `npm run preview` - preview production build
+
+## Contributing
+
+See `CONTRIBUTING.md`.
+
+## Security
+
+See `SECURITY.md` for reporting guidelines.
+
+## License
+
+MIT, see `LICENSE`.
